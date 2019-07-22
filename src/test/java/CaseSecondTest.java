@@ -12,6 +12,8 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -31,11 +33,14 @@ public class CaseSecondTest {
     private static WebDriver driver;
 
     /**
-     *
-     *
-     *
+     * Creates static WebDriverWait object.
      */
     private static WebDriverWait wait;
+
+    /**
+     *Static Domain Name
+     */
+    private final static String DOMAIN = "https://www.sahibinden.com";
 
     /**
      * <p>Setups chrome WebDriver.</p>
@@ -44,13 +49,14 @@ public class CaseSecondTest {
      */
     @BeforeClass
     public static void setUp() {
-    /*    FirefoxProfile profile = new ProfilesIni().getProfile("default");
-        profile.setPreference("network.cookie.cookieBehavior", 2);*/
+        Path projectPath = Paths.get(System.getProperty("user.dir"));
+        Path driverPath = Paths.get(projectPath.toString(), "src", "test", "resources", "geckodriver");
 
-        System.setProperty("webdriver.gecko.driver", "/Users/oguzhantasgin/Downloads/geckodriver");
+        System.setProperty("webdriver.gecko.driver", driverPath.toString());
+
         driver = new FirefoxDriver();
-        driver.navigate().to("https://www.sahibinden.com");
-        wait = new WebDriverWait(driver, 5);
+        driver.navigate().to(DOMAIN);
+        wait = new WebDriverWait(driver, 3);
 
     }
 
@@ -74,16 +80,17 @@ public class CaseSecondTest {
         driver.findElement(By.xpath("//*[@id=\"searchCategoryContainer\"]/div/div/ul/li[1]/a")).click();
 
         //Open city list
-        WebElement openCities = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[@id=\"searchResultLeft-address\"]/dl/dd/ul/li[1]")));
+        WebElement openCities = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//*[@id=\"searchResultLeft-address\"]/dl/dd/ul/li[1]")));
 
         openCities.click();
-
-        wait.until(ExpectedConditions.invisibilityOfElementLocated(By.className("opening")));
 
         //Select city
         WebElement selectCity = wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("[data-id='34']")));
 
         selectCity.click();
+
+        // Wait until loader is closed
+        wait.until(ExpectedConditions.invisibilityOfElementLocated(By.className("loading-80")));
 
         WebElement searchSubmitButton = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("/html/body/div[4]/div[4]/form/div/div[2]/div[23]/button")));
 
@@ -97,11 +104,13 @@ public class CaseSecondTest {
         //Move to moreSelectionLink element.
         ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", moreSelectionLink);
 
+        wait.until(ExpectedConditions.invisibilityOfElementLocated(By.className("sticky-search-button fixed")));
+
         //Manuel scrolling. Avoid from span.
-        ((JavascriptExecutor) driver).executeScript("window.scrollBy(0,-50)");
+        ((JavascriptExecutor) driver).executeScript("window.scrollBy(0,-100)");
 
         //Click more selection
-        moreSelectionLink = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[@id=\"moreSelectionLink\"]/a")));
+        moreSelectionLink = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//*[@id=\"moreSelectionLink\"]/a")));
 
         moreSelectionLink.click();
 
@@ -109,10 +118,10 @@ public class CaseSecondTest {
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("cboxLoadedContent")));
 
         //Transportation
-        WebElement transportion = driver.findElement(By.id("faceted-left-menu-Ulaşım"));
+        WebElement transportation = driver.findElement(By.id("faceted-left-menu-Ulaşım"));
 
         //Move to transportation element.
-        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", transportion);
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", transportation);
 
         wait.until(ExpectedConditions.elementToBeClickable(By.id("faceted-left-menu-Ulaşım")));
 
@@ -127,7 +136,10 @@ public class CaseSecondTest {
 
         detailedSearchSubmitButton.click();
 
-        // Avrasya seçimini görene kadar bekle
+        // Wait until loader is closed
+        wait.until(ExpectedConditions.invisibilityOfElementLocated(By.className("loading-80")));
+
+        //Wait until transportation = "Avrasya" on page in filters.
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[@id=\"currentFilters\"]/li[3]/a")));
 
         WebElement resultsTable = driver.findElement(By.id("searchResultsTable"));
@@ -136,17 +148,18 @@ public class CaseSecondTest {
 
         WebElement dataElement = tableRows.get(1).findElement(By.className("classifiedTitle"));
 
-        wait.until(ExpectedConditions.visibilityOf(dataElement));
+        wait.until(ExpectedConditions.elementToBeClickable(dataElement));
 
+        //Selected first posting on table.
         dataElement.click();
 
         WebElement eurasiaInPosting = driver.findElement(By.xpath("/html/body/div[4]/div[4]/div[2]/div[2]/div[2]/div[2]/ul[6]/li[2]"));
 
+        //Is Eurasia selected ?
         Assert.assertTrue(elementHasClass(eurasiaInPosting, "selected"));
 
 
     }
-
 
     /**
      * <p>Method that works once after main test is over.</p>
@@ -161,22 +174,12 @@ public class CaseSecondTest {
     }
 
     /**
-     * <p>Performs some wait. Avoid of getting element is not reachable.</p>
-     * Waits 5ms.
-     */
-    private void doSomeWait() {
-
-        driver.manage().timeouts().implicitlyWait(100, TimeUnit.SECONDS);
-
-    }
-
-    /**
      * @param element Selected element
-     * @param active
+     * @param className Class name which will be checked.
      * @return
      */
-    public boolean elementHasClass(WebElement element, String active) {
-        return element.getAttribute("class").contains(active);
+    public boolean elementHasClass(WebElement element, String className) {
+        return element.getAttribute("class").contains(className);
     }
 
 
