@@ -1,9 +1,8 @@
 /* This is the case study from company that called "Sahibinden"*/
 
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import com.sun.scenario.effect.impl.sw.sse.SSEBlend_SRC_OUTPeer;
+import org.junit.*;
+import org.junit.runners.MethodSorters;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
@@ -12,6 +11,9 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 /**
@@ -21,6 +23,7 @@ import java.util.List;
  *
  * @author Oğuzhan Taşgın
  */
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class CaseOneTest {
 
     /**
@@ -29,22 +32,29 @@ public class CaseOneTest {
     private static WebDriver driver;
 
     /**
-     *Creates static WebDriverWait object.
+     *Static Domain Name
+     */
+    private final static String DOMAIN = "https://www.sahibinden.com";
+
+    /**
+     * Creates static WebDriverWait object.
      */
     private static WebDriverWait wait;
 
     /**
      * <p>Setups chrome WebDriver.</p>
-     * <p>
      * Runs once before the test scenario
      */
     @BeforeClass
     public static void setUp() {
+        Path projectPath = Paths.get(System.getProperty("user.dir"));
+        Path driverPath = Paths.get(projectPath.toString(), "src", "test", "resources", "geckodriver");
 
-        System.setProperty("webdriver.gecko.driver", "/Users/oguzhantasgin/Downloads/geckodriver");
+        System.setProperty("webdriver.gecko.driver", driverPath.toString());
+
         driver = new FirefoxDriver();
-        driver.navigate().to("https://www.sahibinden.com");
-        wait = new WebDriverWait(driver, 5);
+        driver.navigate().to(DOMAIN);
+        wait = new WebDriverWait(driver, 3);
     }
 
     /**
@@ -52,115 +62,116 @@ public class CaseOneTest {
      * Controls page status.
      */
     @Test
-    public void testCaseOne() {
+    public void test1CheckTitle() {
+        // Check Title of Website
+        String title = driver.getTitle();
+        System.out.println(title);
+        Assert.assertTrue("Title should start with Sahibinden", title.startsWith("Sahibinden"));
+    }
 
-        //Check Title of Website
-        Assert.assertTrue("Title should start with Sahibinden", driver.getTitle().startsWith("Sahibinden"));
+    @Test
+    public void test2CheckHomePageNot404() {
+        // Avoid from 404 Error
 
-        //Click on register page and check existence of page. Avoid from 404 Error
+        String pageSource = driver.getPageSource();
+        Assert.assertFalse(pageSource.contains("404"));
+    }
+
+    @Test
+    public void test3CheckRegisterPageNot404() {
+        // Click on register page and check existence of page. Avoid from 404 Error
         driver.findElement(By.className("register-text")).click();
 
         String pageSource = driver.getPageSource();
+        Assert.assertFalse(pageSource.contains("404"));
+    }
 
-        if (pageSource.contains("404")) {
+    @Test
+    public void test4CheckCaptchaErrorMessage() {
+        //Selected corporate radio button.
+        WebElement radioCorporate = driver.findElement(By.id("corporate"));
+        performClickOperation(radioCorporate);
 
-            Assert.assertTrue("404 Not Found Error", true);
-            endProcess();
+        // Filling required fields
 
-        } else {
+        //Name field
+        fillText("name", "Oğuzhan");
 
-            //User interaction with JS Executor
-            WebElement radioCorporate = driver.findElement(By.id("corporate"));
+        //Surname field
+        fillText("surname", "Taşgın");
 
-            performClickOperation(radioCorporate);
+        //E-mail field
+        fillText("email", "oguzhantasgin@icloud.com");
 
-            //Filling required fields
+        //Password field
+        fillText("password", "oguzhan12345");
 
-            //Name field
-            insertText("name", "Oğuzhan");
+        //Mobile field
+        fillText("mobile", "5534666107");
 
-            //Surname field
-            insertText("surname", "Taşgın");
+        //Category field
+        Select dropListCategory = new Select(driver.findElement(By.id("category")));
 
-            //E-mail field
-            insertText("email", "oguzhantasgin@icloud.com");
+        dropListCategory.selectByVisibleText("Emlak");
 
-            //Password field
-            insertText("password", "oguzhan12345");
+        driver.findElement(By.id("closeCookiePolicy")).click();
 
-            //Mobile field
-            insertText("mobile", "5534666107");
+        //Company type field
+        WebElement radioBusinessType = driver.findElement(By.id("limitedCompany"));
 
-            //Category field
-            Select dropListCategory = new Select(driver.findElement(By.id("category")));
+        performClickOperation(radioBusinessType);
 
-            dropListCategory.selectByVisibleText("Emlak");
+        //Company name field
+        fillText("limitedCompanyName", "/Bad Company Ltd.");
 
-            driver.findElement(By.id("closeCookiePolicy")).click();
+        //City field.
+        wait.until(ExpectedConditions.elementToBeClickable(By.id("city")));
 
-            //Company type field
-            WebElement radioBusinessType = driver.findElement(By.id("limitedCompany"));
+        Select dropListCity = new Select(driver.findElement(By.id("city")));
+        dropListCity.selectByIndex(1);
 
-            performClickOperation(radioBusinessType);
+        //Town field.
+        wait.until(ExpectedConditions.elementToBeClickable(By.id("town")));
 
-            //Company name field
-            insertText("limitedCompanyName", "/Bad Company Ltd.");
+        Select dropListTown = new Select(driver.findElement(By.id("town")));
+        dropListTown.selectByIndex(1);
 
-            //City field.
-            wait.until(ExpectedConditions.elementToBeClickable(By.id("city")));
+        //Quarter field, chosen by index.
+        wait.until(ExpectedConditions.elementToBeClickable(By.id("quarter")));
 
-            Select dropListCity = new Select(driver.findElement(By.id("city")));
+        Select dropListQuarter = new Select(driver.findElement(By.id("quarter")));
+        dropListQuarter.selectByIndex(2);
 
-            dropListCity.selectByIndex(calculateSizeOfDropDownList(dropListCity) - 3);
-
-            //Town field.
-            wait.until(ExpectedConditions.elementToBeClickable(By.id("town")));
-
-            Select dropListTown = new Select(driver.findElement(By.id("town")));
-
-            dropListTown.selectByIndex(calculateSizeOfDropDownList(dropListTown) - 1);
-
-            //Quarter field, chosen by index.
-            wait.until(ExpectedConditions.elementToBeClickable(By.id("quarter")));
-
-            Select dropListQuarter = new Select(driver.findElement(By.id("quarter")));
-
-            dropListQuarter.selectByIndex(calculateSizeOfDropDownList(dropListQuarter) - 1);
-
-            //Address field
-            insertText("address", "Next to the road");
-
-            //Tax office field, chosen by index.
-            Select dropListTaxOffice = new Select(driver.findElement(By.id("taxOffice")));
-
-            dropListTaxOffice.selectByIndex(calculateSizeOfDropDownList(dropListTaxOffice) - 1);
-
-            //Tax number field
-            insertText("taxNumber", "1234567890");
-
-            //Phone numbers fields.
-            insertText("phone", "2122121212");
-
-            insertText("phone2", "2122222222");
-
-            //Licence Agreement check box control.
-            WebElement checkBoxAgree = driver.findElement(By.id("endUserLicenceAgreement"));
-
-            performClickOperation(checkBoxAgree);
-
-            //SignUp button action.
-            WebElement signUp = wait.until(ExpectedConditions.elementToBeClickable(By.id("signUpButton")));
-
-            signUp.submit();
-
-            //Assert captcha error label
-            WebElement labelError = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".captcha-area > label:nth-child(3)")));
-
-            Assert.assertEquals(labelError.getText(), "Güvenlik kodunu kontrol edip tekrar deneyiniz.");
-
-        }
+        //Address field
+        fillText("address", "Next to the road");
 
 
+        //Tax office field, chosen by index.
+        wait.until(ExpectedConditions.elementToBeClickable(By.id("taxOffice")));
+
+        Select dropListTaxOffice = new Select(driver.findElement(By.id("taxOffice")));
+
+        //Tax number field
+        dropListTaxOffice.selectByIndex(0);
+        fillText("taxNumber", "1234567890");
+
+        //Phone numbers fields.
+        fillText("phone", "2122121212");
+
+        fillText("phone2", "2122222222");
+
+        //Licence Agreement check box control.
+        WebElement checkBoxAgree = driver.findElement(By.id("endUserLicenceAgreement"));
+        performClickOperation(checkBoxAgree);
+
+        //SignUp button action.
+        WebElement signUp = wait.until(ExpectedConditions.elementToBeClickable(By.id("signUpButton")));
+        signUp.submit();
+
+        //Assert captcha error label
+        WebElement labelError = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".captcha-area > label:nth-child(3)")));
+
+        Assert.assertEquals(labelError.getText(), "Güvenlik kodunu kontrol edip tekrar deneyiniz.");
     }
 
     /**
@@ -170,18 +181,7 @@ public class CaseOneTest {
      */
     @AfterClass
     public static void cleanUp() {
-
         driver.close();
-
-    }
-
-    /**
-     * <p>Closes driver.</p>
-     */
-    private void endProcess() {
-
-        driver.close();
-
     }
 
     /**
@@ -190,10 +190,7 @@ public class CaseOneTest {
      * @param webElement the object to process by javascript executor.
      */
     private void performClickOperation(WebElement webElement) {
-
-
         ((JavascriptExecutor) driver).executeScript("arguments[0].click()", webElement);
-
     }
 
     /**
@@ -202,25 +199,8 @@ public class CaseOneTest {
      * @param htmlId     Html id.
      * @param inputValue Text to fill required field.
      */
-    private void insertText(String htmlId, String inputValue) {
-
+    private void fillText(String htmlId, String inputValue) {
         driver.findElement(By.id(htmlId)).sendKeys(inputValue);
-
-
     }
 
-    /**
-     * <p>Calculates DropDown list's size.</p>
-     *
-     * @param select Selected DropDown object.
-     * @return Returns size of list.
-     */
-
-    private int calculateSizeOfDropDownList(Select select) {
-
-        List<WebElement> list = select.getOptions();
-
-        return list.size();
-
-    }
 }
